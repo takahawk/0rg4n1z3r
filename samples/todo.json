@@ -1,0 +1,11 @@
+[
+{ "text": "Add todo item structure", "done": true },
+{ "text": "Add rendering with a checkbox", "done": true },
+{ "text": "Add highlighting of selected point", "done": true },
+{ "text": "Cursor moves", "done": true },
+{ "text": "Implement toggling checkbox", "done": true },
+{ "text": "Implement saving to JSON (simple version)", "done": true },
+{ "text": "Implement loading from JSON (simple version)", "done": false },
+{ "text": "Create separate repo for data structures", "done": false },
+{ "text": "Use array list for todo items in there", "done": false }
+]

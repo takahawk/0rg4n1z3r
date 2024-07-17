@@ -22,6 +22,19 @@ printTodoItems(WINDOW *w, TodoItem *todoItems, int len) {
 	}
 }
 
+void
+saveTodoItemsToJSON(char *filename, TodoItem *todoItems, int len) {
+	FILE *f = fopen(filename, "w");
+
+	if (f == NULL) {
+		printf("Failed to open file: %s", filename);
+		return;
+	}
+
+	TodoItemListToJSON(f, todoItems, len);
+	fclose(f);
+}
+
 int main() {
 	initscr();
 
@@ -44,10 +57,26 @@ int main() {
 		},
 		(TodoItem) {
 			.text = "Implement toggling checkbox",
+			.done = 1
+		},
+		(TodoItem) {
+			.text = "Implement saving to JSON (simple version)",
+			.done = 1
+		},
+		(TodoItem) {
+			.text = "Implement loading from JSON (simple version)",
 			.done = 0
 		},
+		(TodoItem) {
+			.text = "Create separate repo for data structures",
+			.done = 0
+		},
+		(TodoItem) {
+			.text = "Use array list for todo items in there",
+			.done = 0
+		}
 	};
-	int todoLen = 5;
+	int todoLen = 9;
 
 	start_color();
 	init_pair(HIGHLIGHTED_PAIR, COLOR_BLACK, COLOR_WHITE);
@@ -60,13 +89,16 @@ int main() {
 	printTodoItems(stdscr, todoItems, todoLen);
 	while ((ch = getch()) != 'q') {
 		switch(ch) {
-		case KEY_DOWN:
+		case KEY_UP:
 		case 'k':
 			y--;
 			break;
-		case KEY_UP:
+		case KEY_DOWN:
 		case 'j':
 			y++;
+			break;
+		case ' ':
+			todoItems[y].done = !todoItems[y].done;
 			break;
 		}
 		y = MAX(0, (MIN(y, todoLen - 1)));
@@ -74,6 +106,8 @@ int main() {
 		printTodoItems(stdscr, todoItems, todoLen);
 	}
 	endwin();
+
+	saveTodoItemsToJSON("samples/todo.json", todoItems, todoLen);
 	return 0;
 }
 
