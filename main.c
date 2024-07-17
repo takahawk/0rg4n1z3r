@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <ncurses.h>
 
 #include "todo_item.h"
@@ -5,7 +7,7 @@
 void
 printTodoItems(WINDOW *w, TodoItem *todoItems, int len) {
 	for (int i = 0; i < len; i++) {
-		mvwprintw(w, i, 0, todoItems[i].text);
+		mvwprintw(w, i, 0, "[%c] %s", todoItems[i].done ? 'x' : ' ', todoItems[i].text);
 	}
 }
 
@@ -19,10 +21,14 @@ int main() {
 		},
 		(TodoItem) {
 			.text = "Add rendering with a checkbox",
+			.done = 1
+		},
+		(TodoItem) {
+			.text = "Add highlighting of selected point",
 			.done = 0
 		}
 	};
-	printTodoItems(stdscr, todoItems, 2);
+	printTodoItems(stdscr, todoItems, 3);
 	getch();
 	endwin();
 	return 0;
