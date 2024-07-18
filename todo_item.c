@@ -11,13 +11,14 @@ TodoItemToJSON(FILE *f, TodoItem item) {
 }
 
 void
-TodoItemListToJSON(FILE *f, TodoItem* items, int len) {
+TodoItemListToJSON(FILE *f, ArrayList* items) {
 	fprintf(f, "[\n");
 
-	for (int i = 0; i < len - 1; i++) {
-		TodoItemToJSON(f, items[i]);
+	for (int i = 0; i < items->len - 1; i++) {
+		TodoItem* item = ArrayListGetTodoItem(items, i);
+		TodoItemToJSON(f, *item);
 		fprintf(f, ",\n");
 	}
-	TodoItemToJSON(f, items[len - 1]);
+	TodoItemToJSON(f, *ArrayListGetTodoItem(items, items->len - 1));
 	fprintf(f, "\n]\n");
 }

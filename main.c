@@ -8,14 +8,15 @@
 #define HIGHLIGHTED_PAIR 1
 
 void
-printTodoItems(WINDOW *w, TodoItem *todoItems, int len) {
+printTodoItems(WINDOW *w, ArrayList *todoItems) {
 	int curX, curY;
 	getyx(w, curY, curX);
-	for (int i = 0; i < len; i++) {
+	for (int i = 0; i < todoItems->len; i++) {
+		TodoItem *item = ArrayListGetTodoItem(todoItems, i);
 		if (curY == i) {
 			attron(COLOR_PAIR(HIGHLIGHTED_PAIR));
 		}
-		mvwprintw(w, i, 0, "[%c] %s", todoItems[i].done ? 'x' : ' ', todoItems[i].text);
+		mvwprintw(w, i, 0, "[%c] %s", item->done ? 'x' : ' ', item->text);
 		if (curY == i) {
 			attroff(COLOR_PAIR(HIGHLIGHTED_PAIR));
 		}
@@ -23,7 +24,7 @@ printTodoItems(WINDOW *w, TodoItem *todoItems, int len) {
 }
 
 void
-saveTodoItemsToJSON(char *filename, TodoItem *todoItems, int len) {
+saveTodoItemsToJSON(char *filename, ArrayList *todoItems) {
 	FILE *f = fopen(filename, "w");
 
 	if (f == NULL) {
@@ -31,14 +32,16 @@ saveTodoItemsToJSON(char *filename, TodoItem *todoItems, int len) {
 		return;
 	}
 
-	TodoItemListToJSON(f, todoItems, len);
+	TodoItemListToJSON(f, todoItems);
 	fclose(f);
 }
 
 int main() {
 	initscr();
 
-	TodoItem todoItems[] = {
+	ArrayList *todoItems = AllocArrayList(sizeof(TodoItem), 10);
+
+	TodoItem todoItemsLegacy[] = {
 		(TodoItem) {
 			.text = "Add todo item structure",
 			.done = 1
@@ -69,14 +72,26 @@ int main() {
 		},
 		(TodoItem) {
 			.text = "Create separate repo for data structures",
+			.done = 1
+		},
+		(TodoItem) {
+			.text = "Use array list for todo items",
+			.done = 1
+		},
+		(TodoItem) {
+			.text = "Implement swapping adjacent elements",
 			.done = 0
 		},
 		(TodoItem) {
-			.text = "Use array list for todo items in there",
+			.text = "Implement adding new todo item",
 			.done = 0
 		}
 	};
-	int todoLen = 9;
+	int todoLen = 11;
+
+	for (int i = 0; i < todoLen; i++) {
+		ArrayListAddTodoItem(todoItems, todoItemsLegacy[i]);
+	}
 
 	start_color();
 	init_pair(HIGHLIGHTED_PAIR, COLOR_BLACK, COLOR_WHITE);
@@ -86,7 +101,7 @@ int main() {
 	int ch;
 	getyx(stdscr, y, x);
 
-	printTodoItems(stdscr, todoItems, todoLen);
+	printTodoItems(stdscr, todoItems);
 	while ((ch = getch()) != 'q') {
 		switch(ch) {
 		case KEY_UP:
@@ -98,16 +113,18 @@ int main() {
 			y++;
 			break;
 		case ' ':
-			todoItems[y].done = !todoItems[y].done;
+			TodoItem *item = ArrayListGetTodoItem(todoItems, y);
+			item->done = !item->done;
 			break;
 		}
 		y = MAX(0, (MIN(y, todoLen - 1)));
 		wmove(stdscr, y, x);
-		printTodoItems(stdscr, todoItems, todoLen);
+		printTodoItems(stdscr, todoItems);
 	}
 	endwin();
 
-	saveTodoItemsToJSON("samples/todo.json", todoItems, todoLen);
+	saveTodoItemsToJSON("samples/todo.json", todoItems);
+	FreeArrayList(todoItems);
 	return 0;
 }
 
