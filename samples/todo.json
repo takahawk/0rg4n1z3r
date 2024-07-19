@@ -5,9 +5,10 @@
 { "text": "Cursor moves", "done": true },
 { "text": "Implement toggling checkbox", "done": true },
 { "text": "Implement saving to JSON (simple version)", "done": true },
-{ "text": "Implement loading from JSON (simple version)", "done": false },
+{ "text": "Implement loading from JSON (simple version)", "done": true },
 { "text": "Create separate repo for data structures", "done": true },
 { "text": "Use array list for todo items", "done": true },
 { "text": "Implement swapping adjacent elements", "done": false },
-{ "text": "Implement adding new todo item", "done": false }
+{ "text": "Implement adding new todo item", "done": false },
+{ "text": "Add alloc/free functions for todoitem", "done": false }
 ]

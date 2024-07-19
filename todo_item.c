@@ -5,22 +5,30 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#include "d4t4-5tructur35/array_list.h"
+
 // TODO: move to some util library
 
 static int
-removeWhitespaces(char *buffer, int len) {
-	int toSkip;
+removeUnquotedWhitespaces(char *buffer, int len) {
+	int toSkip = 0;
+	int quoted = 0;
 	for (int i = 0; i < len; i++) {
 		switch (buffer[i]) {
 		case ' ':
 		case '\n':
 		case '\t':
-			toSkip++;
+			if (!quoted) {
+				toSkip++;
+				continue;
+			}
 			break;
+		case '\"':
+			quoted = !quoted;
 		default:
-			if (toSkip != 0)
-				buffer[i - toSkip] = buffer[i];
 		}
+		if (toSkip != 0)
+			buffer[i - toSkip] = buffer[i];
 	}
 
 	if (toSkip != 0)
@@ -78,13 +86,99 @@ TodoItemListToJSON(FILE *f, ArrayList* items) {
 ArrayList*
 TodoItemListFromJSON(FILE* f) {
 	// TODO: implement some parsing combinator to refactor?
-	// 0. read file to string
+	// read file to string
 	ArrayList* result = AllocArrayList(sizeof(TodoItem), 10);	
 	int len;
 	char *json = readFile(f, &len);
-	int i = 0;
 
-	len -= removeWhitespaces(json, len);
-	//TODO: impl rest
+	// remove whitespace to simplify the rest
+	len -= removeUnquotedWhitespaces(json, len);
 
+	if (json[0] != '[') {
+		// TODO: log error
+		goto error;
+	}
+
+	int i = 1;
+	while (json[i] == '{') {
+		i++;
+		int textSet = 0, doneSet = 0;
+		TodoItem item;
+
+		do {
+			if (json[i++] != '\"') {
+				// TODO: log error
+				goto error;
+			}
+			if (strncmp(json + i, "text", 4) == 0) {
+				i += 4; // text
+				if (json[i++] != '\"') {
+					goto error;
+				}	
+				if (json[i++] != ':') {
+					goto error;
+				}
+				if (json[i++] != '\"') {
+					goto error;
+				}
+				
+				int j = 0;
+				while (json[i + j] != '\"')
+					// we don't expect newline here, check?
+					j++;
+				
+				// TODO: memory-leak! add destructor to TodoItem
+				item.text = malloc(j + 1);
+				memcpy(item.text, json + i, j);
+				item.text[j] = '\0';
+				i += j + 1;
+				textSet = 1;
+			} else if (strncmp(json + i, "done", 4) == 0) {
+				i += 4; // done
+				if (json[i++] != '\"') {
+					goto error;
+				}	
+				if (json[i++] != ':') {
+					goto error;
+				}
+				
+				if (strncmp(json + i, "true", 4) == 0) {
+					item.done = 1;
+					i += 4;
+				} else if (strncmp(json + i, "false", 5) == 0) {
+					item.done = 0;
+					i += 5;
+				}
+				doneSet = 1;
+			}
+				
+			if (textSet && doneSet) {
+				if (json[i++] != '}') {
+					goto error;
+				}
+				break;
+			} 
+
+			if (json[i++] != ',') {
+				goto error;
+			}
+			continue;
+		} while(1);
+
+		
+		ArrayListAdd(result, &item);
+		if (json[i] == ',')
+			i++;
+	}
+
+	if (json[i] != ']') {
+		goto error;
+	}
+
+	free(json);
+	return result;
+error:
+	free(json);
+	free(result);
+	return NULL;
 }

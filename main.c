@@ -23,6 +23,20 @@ printTodoItems(WINDOW *w, ArrayList *todoItems) {
 	}
 }
 
+ArrayList*
+loadTodoItemsFromJSON(char *filename) {
+	FILE *f = fopen(filename, "rb");
+
+	if (f == NULL) {
+		printf("Failed to open file: %s", filename);
+		return NULL;
+	}
+
+	ArrayList* list = TodoItemListFromJSON(f);
+	fclose(f);
+	return list;
+}
+
 void
 saveTodoItemsToJSON(char *filename, ArrayList *todoItems) {
 	FILE *f = fopen(filename, "w");
@@ -39,58 +53,9 @@ saveTodoItemsToJSON(char *filename, ArrayList *todoItems) {
 int main() {
 	initscr();
 
-	ArrayList *todoItems = AllocArrayList(sizeof(TodoItem), 10);
-
-	TodoItem todoItemsLegacy[] = {
-		(TodoItem) {
-			.text = "Add todo item structure",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Add rendering with a checkbox",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Add highlighting of selected point",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Cursor moves",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Implement toggling checkbox",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Implement saving to JSON (simple version)",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Implement loading from JSON (simple version)",
-			.done = 0
-		},
-		(TodoItem) {
-			.text = "Create separate repo for data structures",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Use array list for todo items",
-			.done = 1
-		},
-		(TodoItem) {
-			.text = "Implement swapping adjacent elements",
-			.done = 0
-		},
-		(TodoItem) {
-			.text = "Implement adding new todo item",
-			.done = 0
-		}
-	};
-	int todoLen = 11;
-
-	for (int i = 0; i < todoLen; i++) {
-		ArrayListAddTodoItem(todoItems, todoItemsLegacy[i]);
+	ArrayList *todoItems = loadTodoItemsFromJSON("samples/todo.json");
+	if (todoItems == NULL) {
+		return -1;
 	}
 
 	start_color();
@@ -117,7 +82,7 @@ int main() {
 			item->done = !item->done;
 			break;
 		}
-		y = MAX(0, (MIN(y, todoLen - 1)));
+		y = MAX(0, (MIN(y, todoItems->len - 1)));
 		wmove(stdscr, y, x);
 		printTodoItems(stdscr, todoItems);
 	}
