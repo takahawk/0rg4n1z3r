@@ -25,4 +25,7 @@ TodoItemToJSON(FILE*, TodoItem);
 void
 TodoItemListToJSON(FILE*, ArrayList*);
 
+ArrayList*
+TodoItemListFromJSON(FILE*);
+
 #endif

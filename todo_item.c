@@ -1,6 +1,38 @@
 #include "todo_item.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+
+// TODO: move to some util library
+static char*
+readFileToString(char *filename, int *len) {
+	// TODO: use custom buffer with length
+	char* buffer;
+
+	FILE *f = fopen(filename, "rb");
+
+	if (!f) {
+		// TODO: print error
+		return NULL;
+	}
+
+	fseek(f, 0, SEEK_END);
+	*len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	buffer = malloc(*len);
+
+	int fd = fileno(f);
+
+	void *mapping = mmap(0, *len, PROT_READ, MAP_PRIVATE, fd, 0);
+	memcpy(buffer, mapping, *len);
+	munmap(mapping, *len);
+	fclose(f);
+
+	return buffer;
+}
 
 void
 TodoItemToJSON(FILE *f, TodoItem item) {
@@ -21,4 +53,9 @@ TodoItemListToJSON(FILE *f, ArrayList* items) {
 	}
 	TodoItemToJSON(f, *ArrayListGetTodoItem(items, items->len - 1));
 	fprintf(f, "\n]\n");
+}
+
+ArrayList*
+TodoItemListFromJSON(FILE* f) {
+
 }
