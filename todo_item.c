@@ -6,12 +6,33 @@
 #include <sys/mman.h>
 
 // TODO: move to some util library
+
+static int
+removeWhitespaces(char *buffer, int len) {
+	int toSkip;
+	for (int i = 0; i < len; i++) {
+		switch (buffer[i]) {
+		case ' ':
+		case '\n':
+		case '\t':
+			toSkip++;
+			break;
+		default:
+			if (toSkip != 0)
+				buffer[i - toSkip] = buffer[i];
+		}
+	}
+
+	if (toSkip != 0)
+		buffer[len - toSkip] = '\0';
+
+	return toSkip;
+}
+
 static char*
-readFileToString(char *filename, int *len) {
+readFile(FILE *f, int *len) {
 	// TODO: use custom buffer with length
 	char* buffer;
-
-	FILE *f = fopen(filename, "rb");
 
 	if (!f) {
 		// TODO: print error
@@ -29,7 +50,6 @@ readFileToString(char *filename, int *len) {
 	void *mapping = mmap(0, *len, PROT_READ, MAP_PRIVATE, fd, 0);
 	memcpy(buffer, mapping, *len);
 	munmap(mapping, *len);
-	fclose(f);
 
 	return buffer;
 }
@@ -57,5 +77,14 @@ TodoItemListToJSON(FILE *f, ArrayList* items) {
 
 ArrayList*
 TodoItemListFromJSON(FILE* f) {
+	// TODO: implement some parsing combinator to refactor?
+	// 0. read file to string
+	ArrayList* result = AllocArrayList(sizeof(TodoItem), 10);	
+	int len;
+	char *json = readFile(f, &len);
+	int i = 0;
+
+	len -= removeWhitespaces(json, len);
+	//TODO: impl rest
 
 }
