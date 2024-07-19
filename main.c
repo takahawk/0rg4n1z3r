@@ -16,6 +16,9 @@ printTodoItems(WINDOW *w, ArrayList *todoItems) {
 		if (curY == i) {
 			attron(COLOR_PAIR(HIGHLIGHTED_PAIR));
 		}
+		move(i, 0);
+		clrtoeol();
+		move(curY, curX);
 		mvwprintw(w, i, 0, "[%c] %s", item->done ? 'x' : ' ', item->text);
 		if (curY == i) {
 			attroff(COLOR_PAIR(HIGHLIGHTED_PAIR));
@@ -81,9 +84,15 @@ int main() {
 			TodoItem *item = ArrayListGetTodoItem(todoItems, y);
 			item->done = !item->done;
 			break;
+		case 't':
+			if (y > 0) {
+				ArrayListSwap(todoItems, y, y - 1);
+			}
+			break;
 		}
 		y = MAX(0, (MIN(y, todoItems->len - 1)));
 		wmove(stdscr, y, x);
+		wrefresh(stdscr);
 		printTodoItems(stdscr, todoItems);
 	}
 	endwin();
