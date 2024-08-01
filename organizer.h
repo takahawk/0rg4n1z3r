@@ -24,6 +24,12 @@ O_AddTodo(Organizer*, TodoItem);
 static inline TodoItem*
 O_GetTodo(Organizer, int);
 
+Organizer
+O_FromJSON(String json);
+
+String
+O_ToJSON(Organizer o);
+
 static inline void
 O_AddTodo(Organizer *o, TodoItem ti) {
 	AL_Add(o->todoList, &ti);
@@ -33,6 +39,5 @@ static inline TodoItem*
 O_GetTodo(Organizer o, int i) {
 	return (TodoItem *) AL_Get(o.todoList, i);
 }
-
 
 #endif
