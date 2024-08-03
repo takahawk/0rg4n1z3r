@@ -4,7 +4,9 @@
 
 #include <ncurses.h>
 
-#include "todo_item.h"
+#include "w/ut1l5/files.h"
+
+#include "organizer.h"
 
 #define HIGHLIGHTED_PAIR 1
 
@@ -15,64 +17,37 @@ typedef enum {
 } AppState;
 
 void
-printTodoItems(WINDOW *w, ArrayList *todoItems) {
+printTodoItems(WINDOW *w, Organizer *o) {
 	int curX, curY;
 	getyx(w, curY, curX);
-	for (int i = 0; i < todoItems->len; i++) {
-		TodoItem *item = ArrayListGetTodoItem(todoItems, i);
+	for (int i = 0; i < o->todoList.len; i++) {
+		TodoItem *item = O_GetTodo(*o, i);
 		if (curY == i) {
 			attron(COLOR_PAIR(HIGHLIGHTED_PAIR));
 		}
 		move(i, 0);
 		clrtoeol();
 		move(curY, curX);
-		mvwprintw(w, i, 0, "[%c] %s", item->done ? 'x' : ' ', item->text);
+		mvwprintw(w, i, 0, "[%c] %s", item->done ? 'x' : ' ', item->text.str);
 		if (curY == i) {
 			attroff(COLOR_PAIR(HIGHLIGHTED_PAIR));
 		}
 	}
 }
 
-ArrayList*
-loadTodoItemsFromJSON(char *filename) {
-	FILE *f = fopen(filename, "rb");
-
-	if (f == NULL) {
-		printf("Failed to open file: %s", filename);
-		return NULL;
-	}
-
-	ArrayList* list = TodoItemListFromJSON(f);
-	fclose(f);
-	return list;
-}
-
-void
-saveTodoItemsToJSON(char *filename, ArrayList *todoItems) {
-	FILE *f = fopen(filename, "w");
-
-	if (f == NULL) {
-		printf("Failed to open file: %s", filename);
-		return;
-	}
-
-	TodoItemListToJSON(f, todoItems);
-	fclose(f);
-}
 
 AppState
-todoList(ArrayList*);
+todoList(Organizer*);
 
 AppState
-addNewTodo(ArrayList*);
+addNewTodo(Organizer*);
 
 int main() {
 	initscr();
 
-	ArrayList *todoItems = loadTodoItemsFromJSON("samples/todo.json");
-	if (todoItems == NULL) {
-		return -1;
-	}
+	String json = S_From(uF_ReadFileByName("samples/todo.json"));
+	Organizer o = O_FromJSON(json);
+	S_Free(&json);
 
 	start_color();
 	noecho();
@@ -86,29 +61,31 @@ int main() {
 	while (state != SHUTTING_DOWN) {
 		switch (state) {
 		case TODO_LIST:
-			state = todoList(todoItems);
+			state = todoList(&o);
 			break;
 		case ADD_NEW_TODO:
-			state = addNewTodo(todoItems);
+			state = addNewTodo(&o);
+			break;
+		case SHUTTING_DOWN:
 			break;
 		}
 	}
 	endwin();
 
-	saveTodoItemsToJSON("samples/todo.json", todoItems);
-	FreeArrayList(todoItems);
+	uF_WriteToFileByName("samples/todo.json", S_AsBuffer(O_ToJSON(o)));
 	return 0;
 }
 
 
 AppState
-todoList(ArrayList *todoItems) {
+todoList(Organizer *o) {
 	wclear(stdscr);
 	int x, y;
 	int ch;
 	getyx(stdscr, y, x);
-	printTodoItems(stdscr, todoItems);
+	printTodoItems(stdscr, o);
 	while ((ch = getch()) != 'q') {
+		TodoItem *item;
 		switch(ch) {
 		case KEY_UP:
 		case 'k':
@@ -119,28 +96,28 @@ todoList(ArrayList *todoItems) {
 			y++;
 			break;
 		case ' ':
-			TodoItem *item = ArrayListGetTodoItem(todoItems, y);
+			item = O_GetTodo(*o, y); 
 			item->done = !item->done;
 			break;
 		case 't':
 			if (y > 0) {
-				ArrayListSwap(todoItems, y, y - 1);
+				AL_Swap(&o->todoList, y, y - 1);
 			}
 			break;
 		case 'a':
 			return ADD_NEW_TODO;
 		}
-		y = MAX(0, (MIN(y, todoItems->len - 1)));
+		y = MAX(0, (MIN(y, o->todoList.len - 1)));
 		wmove(stdscr, y, x);
 		wrefresh(stdscr);
-		printTodoItems(stdscr, todoItems);
-	}
+		printTodoItems(stdscr, o); 
 
+	}
 	return SHUTTING_DOWN;
 }
 
 AppState
-addNewTodo(ArrayList *todoItems) {
+addNewTodo(Organizer *o) {
 	wclear(stdscr);
 
 	int ch;
@@ -157,10 +134,10 @@ addNewTodo(ArrayList *todoItems) {
 		case '\n':
 		case KEY_ENTER:
 			TodoItem item = {
-				.text = buffer,
+				.text = S_From(buffer),
 				.done = false
 			};
-			ArrayListAdd(todoItems, &item);
+			O_AddTodo(o, item);
 			goto end;
 		case KEY_BACKSPACE:
 			if (i == 0) {

@@ -32,7 +32,7 @@ O_ToJSON(Organizer o);
 
 static inline void
 O_AddTodo(Organizer *o, TodoItem ti) {
-	AL_Add(o->todoList, &ti);
+	AL_Add(&o->todoList, &ti);
 }
 
 static inline TodoItem*
